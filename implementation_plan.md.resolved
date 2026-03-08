@@ -1,0 +1,66 @@
+# Safeguard AI – Cyber Harassment Detection App
+
+Build a Streamlit web application that scrapes Instagram comments, classifies them by toxicity using Detoxify, and generates FIR PDFs for vulgar content.
+
+## Proposed Changes
+
+### Project Setup
+
+#### [NEW] [requirements.txt](file:///c:/Users/MUKESH SINGH/Desktop/safespace/requirements.txt)
+Dependencies: `streamlit`, `pandas`, `detoxify`, `instaloader`, `fpdf`, `torch`.
+
+---
+
+### Instagram Scraper
+
+#### [NEW] [scraper.py](file:///c:/Users/MUKESH SINGH/Desktop/safespace/scraper.py)
+- Accept an Instagram post URL (shortcode extraction via regex).
+- Use `instaloader` to fetch the post and extract up to 20 comments.
+- Return a list of `{"username": ..., "comment": ...}` dicts.
+- Graceful error handling for private/invalid posts.
+
+---
+
+### Toxicity Analyzer
+
+#### [NEW] [analyzer.py](file:///c:/Users/MUKESH SINGH/Desktop/safespace/analyzer.py)
+- Load `Detoxify("original")` model.
+- For each comment, compute a combined toxicity score (max of all Detoxify label scores).
+- Classify severity: `Low` (<0.25), `Medium` (0.25–0.5), `High` (0.5–0.75), `Vulgar` (>0.75).
+- Return a Pandas DataFrame with columns: `Username`, `Comment`, `Toxicity Score`, `Severity`.
+
+---
+
+### FIR PDF Generator
+
+#### [NEW] [fir_generator.py](file:///c:/Users/MUKESH SINGH/Desktop/safespace/fir_generator.py)
+- Generate a styled FIR PDF using `fpdf`.
+- Include: timestamp, comment text, toxicity score, severity, and statutory warning citing cyber harassment laws (IT Act §66A, §67, IPC §509).
+- Return PDF as bytes for Streamlit download.
+
+---
+
+### Streamlit Dashboard
+
+#### [NEW] [app.py](file:///c:/Users/MUKESH SINGH/Desktop/safespace/app.py)
+- Title bar: **Safeguard AI – Cyber Harassment Detection**.
+- Sidebar with Instagram URL input + "Analyze Comments" button.
+- Main area: styled DataFrame table with red-highlighted vulgar rows.
+- Per-row "Download FIR" buttons for vulgar comments.
+- Summary metrics (total comments, vulgar count, avg toxicity).
+
+> [!IMPORTANT]
+> Instagram scraping requires a **public** post and may need login cookies. The app will fall back to demo data if scraping fails, so the UI can always be demonstrated.
+
+## Verification Plan
+
+### Automated Tests
+1. Run `pip install -r requirements.txt` to confirm all deps install.
+2. Run `streamlit run app.py` and verify the server starts on `localhost:8501`.
+
+### Manual / Browser Verification
+- Open `http://localhost:8501` in the browser.
+- Verify the dashboard title, input field, and analyze button render.
+- Click "Analyze Comments" **without** providing a URL → confirm demo data loads and the table displays.
+- Confirm vulgar rows are highlighted in red.
+- Click a "Download FIR" button → confirm a PDF downloads with correct content.

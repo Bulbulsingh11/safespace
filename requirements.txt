@@ -1,0 +1,8 @@
+streamlit
+pandas
+detoxify
+instaloader
+fpdf
+torch
+plotly
+requests
