@@ -3,6 +3,8 @@ app.py — Safeguard AI v2.0  |  Business-Ready Cyber Harassment Detection Platf
 """
 
 import io
+import time
+import random
 import datetime
 import streamlit as st
 import pandas as pd
@@ -159,6 +161,82 @@ section[data-testid="stSidebar"] .stRadio label { color: #d1d5db !important; }
 .stTabs [data-baseweb="tab-list"] { background: transparent !important; }
 .stTabs [data-baseweb="tab"] { background: transparent !important; }
 .block-container { padding-top: 1rem !important; }
+
+/* ── Evidence Timeline ───────────────────────────────────────────── */
+.timeline-wrap {
+    border-left: 3px solid rgba(138,43,226,.5);
+    margin: 1rem 0 1rem 1.2rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+.timeline-step {
+    position: relative;
+    margin-bottom: .9rem;
+    padding: .55rem .9rem;
+    background: rgba(17,24,39,.6);
+    border: 1px solid rgba(138,43,226,.2);
+    border-radius: 10px;
+    transition: transform .15s;
+}
+.timeline-step:hover { transform: translateX(4px); }
+.timeline-step::before {
+    content: '';
+    position: absolute;
+    left: -1.85rem; top: .75rem;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    box-shadow: 0 0 8px rgba(139,92,246,.6);
+}
+.tl-time {
+    color: #818cf8; font-size: .72rem; font-weight: 700;
+    letter-spacing: .5px; margin-right: .6rem;
+}
+.tl-icon { margin-right: .4rem; }
+.tl-desc { color: #d1d5db; font-size: .85rem; }
+.tl-sev-vulgar { border-left: 3px solid #ef4444 !important; }
+.tl-sev-high   { border-left: 3px solid #f97316 !important; }
+
+/* ── FIR Simulator Portal Panel ──────────────────────────────────── */
+.portal-panel {
+    background: linear-gradient(145deg, rgba(17,24,39,.85), rgba(31,41,55,.9));
+    border: 1px solid rgba(138,43,226,.3);
+    border-radius: 14px;
+    padding: 1.2rem 1.5rem;
+    margin: 1rem 0;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,.3);
+}
+.portal-header {
+    background: linear-gradient(90deg, rgba(138,43,226,.25), rgba(30,80,200,.15));
+    border: 1px solid rgba(138,43,226,.3);
+    border-radius: 10px;
+    padding: .7rem 1rem;
+    margin-bottom: .8rem;
+    display: flex; align-items: center; gap: .6rem;
+}
+.portal-header-text {
+    font-weight: 700; font-size: .95rem;
+    color: #c084fc; letter-spacing: .3px;
+}
+.complaint-box {
+    background: linear-gradient(135deg, rgba(34,197,94,.12), rgba(34,197,94,.05));
+    border: 1px solid rgba(34,197,94,.4);
+    border-left: 4px solid #22c55e;
+    border-radius: 10px;
+    padding: .8rem 1.2rem;
+    margin-top: .7rem;
+}
+.complaint-id {
+    font-size: 1.3rem; font-weight: 800;
+    color: #4ade80;
+    letter-spacing: 1px;
+    animation: pulse-green 2s ease-in-out infinite;
+}
+@keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .7; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -597,27 +675,57 @@ with tab2:
 # ════════════════════════════════════
 #  TAB 3 — FIR Reports
 # ════════════════════════════════════
+
+def _build_evidence_timeline(username: str, severity: str, score: float) -> str:
+    """Generate HTML for the Evidence Timeline of a flagged comment."""
+    now = datetime.datetime.now()
+    sev_cls = "tl-sev-vulgar" if severity == "Vulgar" else "tl-sev-high"
+    steps = [
+        ("🔍", "Comment detected on social media platform", 0),
+        ("🧠", f"AI toxicity analysis completed — score: {score:.4f}", 1),
+        ("⚠️", f"Comment classified as <b style='color:#f87171'>{severity}</b>", 2),
+        ("📄", "FIR evidence document generated", 3),
+        ("🤖", "AI agent prepared cybercrime complaint report", 4),
+    ]
+    html = f'<div style="margin-top:.6rem"><b style="color:#c084fc;font-size:.95rem">📜 Evidence Timeline — @{username}</b></div>'
+    html += '<div class="timeline-wrap">'
+    for icon, desc, offset in steps:
+        t = (now + datetime.timedelta(minutes=offset)).strftime("%I:%M %p")
+        html += (
+            f'<div class="timeline-step {sev_cls}">'
+            f'<span class="tl-time">{t}</span>'
+            f'<span class="tl-icon">{icon}</span>'
+            f'<span class="tl-desc">{desc}</span>'
+            f'</div>'
+        )
+    html += '</div>'
+    return html
+
+
 with tab3:
-    vulgar_df = df[df["Severity"] == "Vulgar"].reset_index(drop=True)
+    vulgar_df = df[df["Severity"].isin(["Vulgar", "High"])].reset_index(drop=True)
 
     if vulgar_df.empty:
-        st.markdown('<div class="alert-ok">✅ No vulgar comments detected — no FIR required!</div>', unsafe_allow_html=True)
+        st.markdown('<div class="alert-ok">✅ No high-severity comments detected — no FIR required!</div>', unsafe_allow_html=True)
     else:
-        st.markdown(f'<div class="alert-danger">🚨 {len(vulgar_df)} comment(s) require FIR action.</div>', unsafe_allow_html=True)
+        vulgar_only = vulgar_df[vulgar_df["Severity"] == "Vulgar"]
+        st.markdown(f'<div class="alert-danger">🚨 {len(vulgar_df)} comment(s) flagged ({len(vulgar_only)} Vulgar, {len(vulgar_df) - len(vulgar_only)} High). FIR action recommended.</div>', unsafe_allow_html=True)
 
-        # Batch download
-        batch_rows = vulgar_df.to_dict("records")
-        batch_bytes = generate_batch_fir_pdf(batch_rows, post_url=st.session_state.post_url)
-        st.download_button(
-            "📦 Download All FIRs (Batch PDF)",
-            data=batch_bytes,
-            file_name=f"Safeguard_Batch_FIR_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-            mime="application/pdf",
-        )
+        # Batch download (vulgar only)
+        if not vulgar_only.empty:
+            batch_rows = vulgar_only.to_dict("records")
+            batch_bytes = generate_batch_fir_pdf(batch_rows, post_url=st.session_state.post_url)
+            st.download_button(
+                "📦 Download All FIRs (Batch PDF)",
+                data=batch_bytes,
+                file_name=f"Safeguard_Batch_FIR_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                mime="application/pdf",
+            )
         st.markdown("---")
 
         for idx, row in vulgar_df.iterrows():
-            with st.expander(f"🚨  @{row['Username']}  —  Score: {row['Toxicity Score']:.4f}", expanded=False):
+            sev_emoji = "🚨" if row["Severity"] == "Vulgar" else "🟠"
+            with st.expander(f"{sev_emoji}  @{row['Username']}  —  {row['Severity']}  —  Score: {row['Toxicity Score']:.4f}", expanded=False):
                 col_info, col_btn = st.columns([5, 1])
                 with col_info:
                     st.markdown(f"**Comment:** {row['Comment']}")
@@ -660,6 +768,59 @@ with tab3:
                         mime="application/pdf",
                         key=f"fir_dl_{idx}",
                     )
+
+                # ── Evidence Timeline ────────────────────────────────
+                st.markdown(
+                    _build_evidence_timeline(row["Username"], row["Severity"], row["Toxicity Score"]),
+                    unsafe_allow_html=True,
+                )
+
+                # ── FIR Filing Simulator (AI Agent) ──────────────────
+                st.markdown(
+                    '<div class="portal-panel">'
+                    '<div class="portal-header">'
+                    '<span style="font-size:1.3rem">🏛️</span>'
+                    '<span class="portal-header-text">National Cybercrime Reporting Portal — Automated Filing</span>'
+                    '</div>'
+                    '<div style="color:#9ca3af;font-size:.82rem">'
+                    'Simulated AI agent for demonstration purposes only. No real submission is made.'
+                    '</div></div>',
+                    unsafe_allow_html=True,
+                )
+
+                if st.button("🤖 Auto File FIR (AI Agent)", key=f"ai_agent_{idx}", use_container_width=True):
+                    complaint_id = f"CYB-{random.randint(100000, 999999)}"
+                    agent_steps = [
+                        ("🤖", "AI Agent initializing…", "Booting autonomous filing agent"),
+                        ("📂", "Collecting evidence…", f"Gathering comment data from @{row['Username']}"),
+                        ("📄", "Preparing FIR report…", f"Generating legal document — score {row['Toxicity Score']:.4f}"),
+                        ("🌐", "Connecting to cybercrime portal…", "Establishing secure connection to NCRP"),
+                        ("📨", "Submitting complaint…", f"Filing complaint against @{row['Username']}"),
+                    ]
+                    progress_bar = st.progress(0, text="🤖 AI Agent starting…")
+                    status_placeholder = st.empty()
+                    for i, (icon, step_label, step_detail) in enumerate(agent_steps):
+                        progress_bar.progress((i + 1) * 20, text=f"{icon} {step_label}")
+                        status_placeholder.markdown(f"**{icon} {step_label}**\n\n{step_detail}")
+                        time.sleep(1.0)
+                    progress_bar.progress(100, text="✅ Complaint submitted successfully!")
+                    status_placeholder.empty()
+
+                    st.markdown(
+                        f'<div class="complaint-box">'
+                        f'<div style="color:#86efac;font-size:.8rem;font-weight:600;margin-bottom:.3rem">'
+                        f'✅ COMPLAINT REGISTERED SUCCESSFULLY</div>'
+                        f'<div class="complaint-id">{complaint_id}</div>'
+                        f'<div style="color:#9ca3af;font-size:.78rem;margin-top:.3rem">'
+                        f'Filed against @{row["Username"]}  •  '
+                        f'{datetime.datetime.now().strftime("%d %b %Y, %I:%M %p")}  •  '
+                        f'Severity: {row["Severity"]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                    st.balloons()
+
+                st.markdown("---")
 
                 # Email to Cybercrime Cell
                 with st.container(border=True):
