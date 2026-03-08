@@ -3,6 +3,7 @@ fir_generator.py — FIR (First Information Report) PDF Generator
 Generates a professional FIR document for each vulgar comment.
 Compatible with fpdf 1.7.2.
 """
+from __future__ import annotations
 
 import io
 import uuid

@@ -2,6 +2,7 @@
 analyzer.py — Toxicity Detection Engine
 Uses Detoxify with full sub-label scores for detailed analysis.
 """
+from __future__ import annotations
 
 import pandas as pd
 from detoxify import Detoxify

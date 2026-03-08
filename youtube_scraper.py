@@ -3,6 +3,7 @@ youtube_scraper.py — YouTube Comment Fetcher
 Uses the free YouTube Data API v3 (no login required).
 Get a free API key at: https://console.cloud.google.com/ → APIs → YouTube Data API v3
 """
+from __future__ import annotations
 
 import re
 import requests

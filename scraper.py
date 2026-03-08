@@ -3,6 +3,7 @@ scraper.py — Instagram Comment Scraper
 Uses direct Instagram API requests with browser cookies (no instaloader).
 This approach mimics a real browser and is much harder for Instagram to block.
 """
+from __future__ import annotations
 
 import re
 import os
